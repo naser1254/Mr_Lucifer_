@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+    <title>2048 - الأسلحة (Weapons)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Arial', sans-serif; 
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: #fff; 
+            min-height: 100vh; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+            touch-action: manipulation;
+        }
+        .game-container { 
+            text-align: center; 
+            padding: 20px;
+            max-width: 500px;
+            width: 100%;
+        }
+        h1 { 
+            color: #ffd700; 
+            margin-bottom: 10px; 
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        .score { 
+            font-size: 1.2em; 
+            margin-bottom: 20px; 
+            color: #ccc;
+        }
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(4, 1fr); 
+            gap: 10px; 
+            background: #3a3a3a; 
+            padding: 15px; 
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .cell { 
+            width: 80px; 
+            height: 80px; 
+            background: #4a4a4a; 
+            border-radius: 5px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-weight: bold; 
+            font-size: 1.2em;
+            transition: all 0.15s ease;
+        }
+        .cell[data-value="1"] { background: #8B4513; color: #fff; }
+        .cell[data-value="2"] { background: #A0522D; color: #fff; }
+        .cell[data-value="3"] { background: #CD853F; color: #fff; }
+        .cell[data-value="4"] { background: #DAA520; color: #000; }
+        .cell[data-value="5"] { background: #FFD700; color: #000; }
+        .cell[data-value="6"] { background: #FFA500; color: #000; }
+        .cell[data-value="7"] { background: #FF6347; color: #fff; }
+        .cell[data-value="8"] { background: #FF4500; color: #fff; }
+        .controls { 
+            color: #aaa; 
+            margin-top: 20px; 
+            line-height: 1.6;
+        }
+        .new-game { 
+            background: #ffd700; 
+            color: #000; 
+            border: none; 
+            padding: 12px 25px; 
+            border-radius: 5px; 
+            font-size: 1em; 
+            font-weight: bold; 
+            cursor: pointer; 
+            margin-bottom: 20px;
+            transition: background 0.3s;
+        }
+        .new-game:hover { background: #ffed4e; }
+        .analyzer-btn { 
+            background: #4CAF50; 
+            color: white; 
+            border: none; 
+            padding: 12px 25px; 
+            border-radius: 5px; 
+            font-size: 1em; 
+            font-weight: bold; 
+            cursor: pointer; 
+            margin-left: 10px;
+            transition: background 0.3s;
+        }
+        .analyzer-btn:hover { background: #45a049; }
+        .editor-btn { 
+            background: #FF6B35; 
+            color: white; 
+            border: none; 
+            padding: 12px 25px; 
+            border-radius: 5px; 
+            font-size: 1em; 
+            font-weight: bold; 
+            cursor: pointer; 
+            margin-left: 10px;
+            transition: background 0.3s;
+        }
+        .editor-btn:hover { background: #e55a2b; }
+        .editor-btn.active { background: #d44820; }
+        .analyzer-panel {
+            background: #2a2a2a;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            display: none;
+        }
+        .analyzer-panel.show { display: block; }
+        .move-suggestion {
+            background: #4CAF50;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .alternative-moves {
+            background: #555;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .alternative-move {
+            margin: 5px 0;
+            padding: 5px;
+            background: #666;
+            border-radius: 3px;
+        }
+        .weapon-selector {
+            display: none;
+            background: #333;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            text-align: center;
+        }
+        .weapon-selector.show { display: block; }
+        .weapon-btn {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            margin: 5px;
+            border: 2px solid #666;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1em;
+            color: white;
+            transition: border-color 0.3s;
+            line-height: 46px;
+        }
+        .weapon-btn:hover { border-color: #ffd700; }
+        .weapon-btn.selected { border-color: #ffd700; border-width: 3px; }
+        .clear-btn {
+            background: #666;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .editor-grid .cell { cursor: pointer; }
+        .editor-grid .cell:hover { border: 2px solid #ffd700; }
+        @media (max-width: 480px) {
+            .cell { width: 70px; height: 70px; font-size: 1em; }
+            h1 { font-size: 2em; }
+            .analyzer-btn { margin-left: 0; margin-top: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>2048 الأسلحة</h1>
+        <div class="score">Score: <span id="score">0</span> | Best: <span id="best">0</span></div>
+        <button class="new-game" onclick="newGame()">New Game</button>
+        <button class="analyzer-btn" onclick="toggleAnalyzer()">ANALYZER</button>
+        <button class="editor-btn" id="editorBtn" onclick="toggleEditor()">EDITOR</button>
+        <div class="grid" id="grid"></div>
+        <div class="weapon-selector" id="weaponSelector">
+            <h3 style="color: #ffd700; margin-bottom: 15px;">🛠️ Weapon Selector</h3>
+            <div id="weaponButtons"></div>
+            <button class="clear-btn" onclick="clearBoard()">Clear Board</button>
+            <button class="clear-btn" onclick="exitEditor()">Exit Editor</button>
+        </div>
+        <div class="analyzer-panel" id="analyzerPanel">
+            <h3 style="color: #ffd700; margin-bottom: 15px;">🧠 Tactical Analyzer</h3>
+            <div id="analysisResult"></div>
+            <button style="background: #666; color: white; border: none; padding: 8px 16px; border-radius: 3px; cursor: pointer; margin-top: 10px;" onclick="analyzePosition()">Analyze Current Position</button>
+        </div>
+        <div class="controls">
+            <strong>Desktop:</strong> Arrow keys or WASD<br>
+            <strong>Mobile:</strong> Swipe to move<br>
+            <strong>Goal:</strong> R1 → R2 → R3 → M → G → S → RPG → 🔥
+        </div>
+    </div>
+
+    <script>
+        const weaponNames = ['', 'R1', 'R2', 'R3', 'M', 'G', 'S', 'RPG', '🔥'];
+        let grid = [];
+        let score = 0;
+        let bestScore = localStorage.getItem('best2048') || 0;
+        let isEditorMode = false;
+        let selectedWeapon = 0;
+
+        function initGrid() {
+            grid = Array(4).fill().map(() => Array(4).fill(0));
+            score = 0;
+            addRandomTile();
+            addRandomTile();
+            updateDisplay();
+        }
+
+        function addRandomTile() {
+            const emptyCells = [];
+            for (let i = 0; i < 4; i++) {
+                for (let j = 0; j < 4; j++) {
+                    if (grid[i][j] === 0) emptyCells.push([i, j]);
+                }
+            }
+            if (emptyCells.length > 0) {
+                const [row, col] = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+                grid[row][col] = Math.random() < 0.9 ? 1 : 2;
+            }
+        }
+
+        function updateDisplay() {
+            const gridElement = document.getElementById('grid');
+            gridElement.innerHTML = '';
+            
+            if (isEditorMode) {
+                gridElement.className = 'grid editor-grid';
+            } else {
+                gridElement.className = 'grid';
+            }
+            
+            for (let i = 0; i < 4; i++) {
+                for (let j = 0; j < 4; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    const value = grid[i][j];
+                    if (value > 0) {
+                        cell.textContent = weaponNames[value];
+                        cell.setAttribute('data-value', value);
+                    }
+                    
+                    if (isEditorMode) {
+                        cell.onclick = () => placeWeapon(i, j);
+                    }
+                    
+                    gridElement.appendChild(cell);
+                }
+            }
+            
+            document.getElementById('score').textContent = score;
+            document.getElementById('best').textContent = bestScore;
+        }
+
+        function slide(row) {
+            const filtered = row.filter(val => val !== 0);
+            const missing = 4 - filtered.length;
+            const zeros = Array(missing).fill(0);
+            return filtered.concat(zeros);
+        }
+
+        function combine(row) {
+            for (let i = 0; i < 3; i++) {
+                if (row[i] !== 0 && row[i] === row[i + 1]) {
+                    row[i]++;
+                    row[i + 1] = 0;
+                    score += Math.pow(2, row[i]);
+                }
+            }
+            return row;
+        }
+
+        function move(direction) {
+            let moved = false;
+            const previousGrid = grid.map(row => [...row]);
+
+            if (direction === 'left') {
+                for (let i = 0; i < 4; i++) {
+                    let row = grid[i];
+                    row = slide(row);
+                    row = combine(row);
+                    row = slide(row);
+                    grid[i] = row;
+                }
+            } else if (direction === 'right') {
+                for (let i = 0; i < 4; i++) {
+                    let row = grid[i].slice().reverse();
+                    row = slide(row);
+                    row = combine(row);
+                    row = slide(row);
+                    grid[i] = row.reverse();
+                }
+            } else if (direction === 'up') {
+                for (let j = 0; j < 4; j++) {
+                    let column = [grid[0][j], grid[1][j], grid[2][j], grid[3][j]];
+                    column = slide(column);
+                    column = combine(column);
+                    column = slide(column);
+                    for (let i = 0; i < 4; i++) {
+                        grid[i][j] = column[i];
+                    }
+                }
+            } else if (direction === 'down') {
+                for (let j = 0; j < 4; j++) {
+                    let column = [grid[3][j], grid[2][j], grid[1][j], grid[0][j]];
+                    column = slide(column);
+                    column = combine(column);
+                    column = slide(column);
+                    for (let i = 0; i < 4; i++) {
+                        grid[3-i][j] = column[i];
+                    }
+                }
+            }
+
+            for (let i = 0; i < 4; i++) {
+                for (let j = 0; j < 4; j++) {
+                    if (grid[i][j] !== previousGrid[i][j]) {
+                        moved = true;
+                        break;
+                    }
+                }
+            }
+
+            if (moved) {
+                addRandomTile();
+                updateDisplay();
+                
+                if (score > bestScore) {
+                    bestScore = score;
+                    localStorage.setItem('best2048', bestScore);
+                }
+                
+                if (isGameOver()) {
+                    setTimeout(() => alert('Game Over! Final Score: ' + score), 100);
+                }
+            }
+        }
+
+        function isGameOver() {
+            for (let i = 0; i < 4; i++) {
+                for (let j = 0; j < 4; j++) {
+                    if (grid[i][j] === 0) return false;
+                    if (j < 3 && grid[i][j] === grid[i][j + 1]) return false;
+                    if (i < 3 && grid[i][j] === grid[i + 1][j]) return false;
+                }
+            }
+            return true;
+        }
+
+        function newGame() {
+            initGrid();
+        }
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (isEditorMode) return; // Disable moves in editor mode
+            
+            switch (e.key) {
+                case 'ArrowLeft':
+                case 'a':
+                case 'A':
+                    e.preventDefault();
+                    move('left');
+                    break;
+                case 'ArrowRight':
+                case 'd':
+                case 'D':
+                    e.preventDefault();
+                    move('right');
+                    break;
+                case 'ArrowUp':
+                case 'w':
+                case 'W':
+                    e.preventDefault();
+                    move('up');
+                    break;
+                case 'ArrowDown':
+                case 's':
+                case 'S':
+                    e.preventDefault();
+                    move('down');
+                    break;
+            }
+        });
+
+        // Touch controls
+        let startX, startY;
+        document.addEventListener('touchstart', (e) => {
+            if (isEditorMode) return; // Disable swipe moves in editor mode
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+        });
+
+        document.addEventListener('touchend', (e) => {
+            if (isEditorMode || !startX || !startY) return;
+            
+            const endX = e.changedTouches[0].clientX;
+            const endY = e.changedTouches[0].clientY;
+            
+            const diffX = startX - endX;
+            const diffY = startY - endY;
+            
+            if (Math.abs(diffX) > Math.abs(diffY)) {
+                if (diffX > 30) move('left');
+                else if (diffX < -30) move('right');
+            } else {
+                if (diffY > 30) move('up');
+                else if (diffY < -30) move('down');
+            }
+            
+            startX = null;
+            startY = null;
+        });
+
+        // Editor Functions
+        function toggleEditor() {
+            isEditorMode = !isEditorMode;
+            const editorBtn = document.getElementById('editorBtn');
+            const weaponSelector = document.getElementById('weaponSelector');
+            const analyzerPanel = document.getElementById('analyzerPanel');
+            
+            if (isEditorMode) {
+                editorBtn.textContent = 'EXIT EDITOR';
+                editorBtn.classList.add('active');
+                weaponSelector.classList.add('show');
+                analyzerPanel.classList.remove('show');
+                initWeaponSelector();
+                clearBoard();
+            } else {
+                exitEditor();
+            }
+            updateDisplay();
+        }
+
+        function exitEditor() {
+            isEditorMode = false;
+            const editorBtn = document.getElementById('editorBtn');
+            const weaponSelector = document.getElementById('weaponSelector');
+            
+            editorBtn.textContent = 'EDITOR';
+            editorBtn.classList.remove('active');
+            weaponSelector.classList.remove('show');
+            updateDisplay();
+        }
+
+        function initWeaponSelector() {
+            const container = document.getElementById('weaponButtons');
+            container.innerHTML = '<div style="margin-bottom: 10px; color: #ccc;">Click a weapon, then click grid cells to place:</div>';
+            
+            // Empty cell option
+            const emptyBtn = document.createElement('div');
+            emptyBtn.className = 'weapon-btn selected';
+            emptyBtn.style.background = '#4a4a4a';
+            emptyBtn.textContent = '✕';
+            emptyBtn.onclick = () => selectWeapon(0, emptyBtn);
+            container.appendChild(emptyBtn);
+            
+            // Weapon options
+            for (let i = 1; i < weaponNames.length; i++) {
+                const btn = document.createElement('div');
+                btn.className = 'weapon-btn';
+                btn.textContent = weaponNames[i];
+                btn.setAttribute('data-value', i);
+                btn.onclick = () => selectWeapon(i, btn);
+                container.appendChild(btn);
+            }
+        }
+
+        function selectWeapon(weaponValue, buttonElement) {
+            selectedWeapon = weaponValue;
+            document.querySelectorAll('.weapon-btn').forEach(btn => btn.classList.remove('selected'));
+            buttonElement.classList.add('selected');
+        }
+
+        function placeWeapon(row, col) {
+            if (isEditorMode) {
+                grid[row][col] = selectedWeapon;
+                updateDisplay();
+            }
+        }
+
+        function clearBoard() {
+            grid = Array(4).fill().map(() => Array(4).fill(0));
+            score = 0;
+            updateDisplay();
+        }
+
+        // Tactical Analyzer Functions
+        function toggleAnalyzer() {
+            const panel = document.getElementById('analyzerPanel');
+            const weaponSelector = document.getElementById('weaponSelector');
+            
+            if (isEditorMode) {
+                weaponSelector.classList.remove('show');
+            }
+            panel.classList.toggle('show');
+        }
+
+        function simulateMove(testGrid, direction) {
+            const newGrid = testGrid.map(row => [...row]);
+            let merges = 0;
+            let moveScore = 0;
+
+            if (direction === 'left') {
+                for (let i = 0; i < 4; i++) {
+                    let row = newGrid[i].filter(val => val !== 0);
+                    for (let j = 0; j < row.length - 1; j++) {
+                        if (row[j] === row[j + 1]) {
+                            row[j]++;
+                            moveScore += Math.pow(2, row[j]);
+                            row[j + 1] = 0;
+                            merges++;
+                        }
+                    }
+                    row = row.filter(val => val !== 0);
+                    while (row.length < 4) row.push(0);
+                    newGrid[i] = row;
+                }
+            } else if (direction === 'right') {
+                for (let i = 0; i < 4; i++) {
+                    let row = newGrid[i].filter(val => val !== 0).reverse();
+                    for (let j = 0; j < row.length - 1; j++) {
+                        if (row[j] === row[j + 1]) {
+                            row[j]++;
+                            moveScore += Math.pow(2, row[j]);
+                            row[j + 1] = 0;
+                            merges++;
+                        }
+                    }
+                    row = row.filter(val => val !== 0);
+                    while (row.length < 4) row.push(0);
+                    newGrid[i] = row.reverse();
+                }
+            } else if (direction === 'up') {
+                for (let j = 0; j < 4; j++) {
+                    let col = [newGrid[0][j], newGrid[1][j], newGrid[2][j], newGrid[3][j]].filter(val => val !== 0);
+                    for (let k = 0; k < col.length - 1; k++) {
+                        if (col[k] === col[k + 1]) {
+                            col[k]++;
+                            moveScore += Math.pow(2, col[k]);
+                            col[k + 1] = 0;
+                            merges++;
+                        }
+                    }
+                    col = col.filter(val => val !== 0);
+                    while (col.length < 4) col.push(0);
+                    for (let i = 0; i < 4; i++) newGrid[i][j] = col[i];
+                }
+            } else if (direction === 'down') {
+                for (let j = 0; j < 4; j++) {
+                    let col = [newGrid[3][j], newGrid[2][j], newGrid[1][j], newGrid[0][j]].filter(val => val !== 0);
+                    for (let k = 0; k < col.length - 1; k++) {
+                        if (col[k] === col[k + 1]) {
+                            col[k]++;
+                            moveScore += Math.pow(2, col[k]);
+                            col[k + 1] = 0;
+                            merges++;
+                        }
+                    }
+                    col = col.filter(val => val !== 0);
+                    while (col.length < 4) col.push(0);
+                    for (let i = 0; i < 4; i++) newGrid[3-i][j] = col[i];
+                }
+            }
+
+            const emptySpaces = newGrid.flat().filter(cell => cell === 0).length;
+            return { newGrid, merges, moveScore, emptySpaces };
+        }
+
+        function analyzePosition() {
+            const moves = ['up', 'down', 'left', 'right'];
+            const moveDirections = ['↑', '↓', '←', '→'];
+            const originalEmpty = grid.flat().filter(cell => cell === 0).length;
+            
+            // Check if board has any weapons
+            const hasWeapons = grid.flat().some(cell => cell > 0);
+            if (!hasWeapons) {
+                document.getElementById('analysisResult').innerHTML = `
+                    <div style="color: #ffaa00; padding: 10px; background: #333; border-radius: 5px;">
+                        ⚠️ No weapons on board. Use EDITOR mode to place weapons first.
+                    </div>
+                `;
+                return;
+            }
+            
+            const analyses = moves.map((move, index) => {
+                const result = simulateMove(grid, move);
+                let quality = 0;
+                quality += result.merges * 15; // Higher weight for merges in custom setups
+                quality += result.moveScore / 10;
+                quality += (result.emptySpaces - originalEmpty) * 5;
+                
+                // Bonus for maintaining high-value weapons
+                const hasHighValue = result.newGrid.flat().some(cell => cell >= 6);
+                if (hasHighValue) quality += 5;
+                
+                return {
+                    move,
+                    direction: moveDirections[index],
+                    merges: result.merges,
+                    score: result.moveScore,
+                    quality,
+                    emptySpaces: result.emptySpaces
+                };
+            });
+
+            analyses.sort((a, b) => b.quality - a.quality);
+            
+            const best = analyses[0];
+            const confidence = best.merges > 0 ? 0.95 : best.emptySpaces > originalEmpty ? 0.80 : 0.65;
+            
+            let reasoning = '';
+            if (best.merges > 0) {
+                reasoning = `Creates ${best.merges} merge(s) earning ${best.score} points. This consolidates weapons and creates space for future moves.`;
+            } else if (best.emptySpaces > originalEmpty) {
+                reasoning = `Opens up ${best.emptySpaces - originalEmpty} new space(s). This improves board mobility and positioning.`;
+            } else {
+                reasoning = 'Maintains current position. Consider repositioning weapons to set up future combinations.';
+            }
+
+            const resultHtml = `
+                <div class="move-suggestion">
+                    🎯 Recommended Move: ${best.direction} ${best.move.toUpperCase()}
+                    <br>Confidence: ${Math.round(confidence * 100)}%
+                </div>
+                <div style="margin: 10px 0; color: #ccc;">
+                    <strong>Strategic Analysis:</strong><br>
+                    ${reasoning}
+                </div>
+                <div class="alternative-moves">
+                    <strong>Alternative Moves:</strong>
+                    ${analyses.slice(1, 3).map(alt => `
+                        <div class="alternative-move">
+                            ${alt.direction} ${alt.move.toUpperCase()}: Quality ${Math.round(alt.quality)} 
+                            ${alt.merges > 0 ? `(${alt.merges} merges, +${alt.score} pts)` : '(positioning move)'}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+
+            document.getElementById('analysisResult').innerHTML = resultHtml;
+        }
+
+        // Initialize game
+        initGrid();
+    </script>
+</body>
+</html>
